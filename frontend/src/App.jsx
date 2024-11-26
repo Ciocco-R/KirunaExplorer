@@ -11,9 +11,24 @@ import LoginPage from "./components/LoginPage";
 import "./App.css";
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const handleLogin = async (credentials) => {
+    const user = await API.logIn(credentials);
+    setUser(user);
+    setLoggedIn(true);
+  }
+  
+  const handleLogout = async () => {
+    await API.logOut();
+    setLoggedIn(false);
+    setUser(null);
+  }
+
   return (
     <div>
-      <Header />
+      <Header loggedIn={loggedIn} userInfo={user} logout={handleLogout}/>
       <Container fluid className="d-flex flex-column min-vh-100 p-0 mt-5">
         <Routes>
           <Route
@@ -25,7 +40,7 @@ function App() {
           >
             <Route path="/documents" element={<ListDocuments />} />
             <Route path="/map" element={<Map />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage login={handleLogin}/>} />
             <Route path="/" element={<SplashPage />} />
             <Route
               path="*"
