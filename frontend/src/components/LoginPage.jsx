@@ -1,11 +1,18 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Button, Alert } from "react-bootstrap";
 
-const LoginComponent = () => {
+const LoginComponent = (props) => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
+
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const [show, setShow] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -15,9 +22,19 @@ const LoginComponent = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Login data:", formData);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const credentials = { username, password };
+    console.log("LoginForm.handleSubmit", credentials);
+    props.login(credentials)
+      .then(() => navigate("/"))
+      .catch((err) => {
+        if (err.message === "Unauthorized")
+          setErrorMessage("Invalid username and/or password");
+        else
+          setErrorMessage(err.message);
+        setShow(true);
+      });
   };
 
   return (
@@ -28,6 +45,13 @@ const LoginComponent = () => {
       <div className="card shadow p-4" style={{ width: "400px" }}>
         <h3 className="card-title text-center mb-4">Login</h3>
         <form onSubmit={handleSubmit}>
+            <Alert
+                dismissible
+                show={show}
+                onClose={() => setShow(false)}
+                variant="danger">
+                {errorMessage}
+              </Alert>
           <div className="mb-3">
             <label htmlFor="username" className="form-label">
               Username
@@ -37,7 +61,8 @@ const LoginComponent = () => {
               className="form-control"
               id="username"
               name="username"
-              value={formData.username}
+              value={formData.username} 
+              placeholder="Example: johnDoe"
               onChange={handleChange}
               required
             />
@@ -52,12 +77,13 @@ const LoginComponent = () => {
               id="password"
               name="password"
               value={formData.password}
+              placeholder="Enter your password"
               onChange={handleChange}
               required
             />
           </div>
           <button type="submit" className="btn btn-primary w-100 mt-4">
-            Complete login
+            Login
           </button>
         </form>
       </div>
@@ -65,4 +91,25 @@ const LoginComponent = () => {
   );
 };
 
-export default LoginComponent;
+LoginComponent.propTypes = {
+  login: PropTypes.func,
+};
+
+function LogoutButton(props) {
+  return (
+    <Button variant="outline-light" onClick={props.logout}>Logout</Button>
+  )
+}
+
+LogoutButton.propTypes = {
+  logout: PropTypes.func
+}
+
+function LoginButton() {
+  const navigate = useNavigate();
+  return (
+    <Button variant="outline-light" onClick={() => navigate('/login')}>Login</Button>
+  )
+}
+
+export { LoginComponent, LogoutButton, LoginButton };

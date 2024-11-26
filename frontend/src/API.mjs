@@ -10,13 +10,14 @@ const SERVER_URL = "http://localhost:8080/api/v1";
 
 // Given a credentials object containing username and passowrd it executes login
 const logIn = async (credentials) => {
+  console.log("API.logIn", credentials);
   return await fetch(SERVER_URL + "/sessions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     credentials: "include",
-    body: JSON.stringyfi(credentials),
+    body: JSON.stringify(credentials),
   })
     .then(handleInvalidResponse)
     .then((response) => response.json());
