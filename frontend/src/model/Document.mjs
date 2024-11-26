@@ -26,18 +26,26 @@ export class Document {
     this.geolocation = geolocation;
     this.description = description;
   }
+
+  static fromJson(json) {
+    return new Document(
+      json.id,
+      json.title,
+      json.stakeholders,
+      json.scale,
+      json.issuanceDate,
+      json.type,
+      json.nrConnections,
+      json.language,
+      json.nrPages,
+      json.geolocation,
+      json.description
+    );
+  }
 }
 
 export class DocumentSnippet {
-  constructor(
-    id,
-    title,
-    scale,
-    issuanceDate,
-    type,
-    geolocation,
-    stakeholders
-  ) {
+  constructor(id, title, scale, issuanceDate, type, geolocation, stakeholders) {
     this.id = id;
     this.title = title;
     this.scale = scale;
@@ -45,6 +53,18 @@ export class DocumentSnippet {
     this.type = type;
     this.geolocation = geolocation;
     this.stakeholders = stakeholders;
+  }
+
+  static fromJson(json) {
+    return new DocumentSnippet(
+      json.id,
+      json.title,
+      json.scale,
+      json.issuanceDate,
+      json.type,
+      json.geolocation,
+      json.stakeholders
+    );
   }
 }
 

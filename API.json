@@ -4,11 +4,16 @@
     "title": "Kiruna eXplorer",
     "description": "REST APIs for the interaction with the Kiruna eXplorer service.",
     "termsOfService": "http://swagger.io/terms/",
-    "version": "0.4"
+    "version": "0.5"
   },
+  "servers": [
+    {
+      "url": "http://localhost:8080/"
+    }
+  ],
   "components": {
     "schemas": {
-      "document": {
+      "Document": {
         "title": "Document",
         "type": "object",
         "additionalProperties": false,
@@ -138,7 +143,7 @@
           "type"
         ]
       },
-      "documentSnippet": {
+      "DocumentSnippet": {
         "title": "DocumentSnippet",
         "type": "object",
         "additionalProperties": false,
@@ -246,7 +251,7 @@
           "type"
         ]
       },
-      "link": {
+      "Link": {
         "title": "Link",
         "description": "JSON schema for a link data structure",
         "type": "object",
@@ -275,16 +280,77 @@
           "type",
           "documentId"
         ]
+      },
+      "User": {
+        "description": "schema for a User data structure",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "$schema": {
+            "type": "string",
+            "description": "path to the JSON Schema to use for the validation of the JSON data structure describing the user"
+          },
+          "id": {
+            "type": "integer",
+            "description": "unique identifier for the user"
+          },
+          "username": {
+            "type": "string",
+            "description": "the username of the user",
+            "minLength": 2,
+            "maxLength": 16
+          }
+        }
+      },
+      "Users": {
+        "description": "schema for Users data structure",
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/User"
+        }
+      },
+      "Credentials": {
+        "description": "schema for a Credentials data structure",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "the username of the user",
+            "minLength": 2,
+            "maxLength": 16
+          },
+          "password": {
+            "type": "string",
+            "description": "user's password",
+            "minLength": 8,
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "description": "JWT to identify the authenticated user.",
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid"
       }
     }
   },
   "paths": {
     "/api/v1/documents": {
       "get": {
-        "summary": "Get all documents",
         "tags": [
           "document"
         ],
+        "summary": "Get documents",
+        "description": "All existing documents are retrieved",
+        "operationId": "getDocuments",
         "parameters": [],
         "responses": {
           "200": {
@@ -294,36 +360,46 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/documentSnippet"
+                    "$ref": "#/components/schemas/DocumentSnippet"
                   }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       },
       "post": {
-        "summary": "Create a new document",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Create new document",
+        "description": "A new document is created by an authenticated user",
+        "operationId": "createDocument",
         "parameters": [],
         "requestBody": {
-          "required": true,
+          "description": "Representation of the document to be created (with no id because it is assigned by the service)",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/document"
+                "$ref": "#/components/schemas/Document"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
-            "description": "Created"
+            "description": "Created",
+            "content": {}
           },
           "400": {
             "description": "Bad request",
@@ -336,29 +412,42 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       },
       "put": {
-        "summary": "Update a document",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Update document",
+        "description": "Updates an already existing document with the representation given. The id of the document is specified in the payload.",
+        "operationId": "updateDocument",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/document"
+                "$ref": "#/components/schemas/Document"
               }
             }
           }
         },
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "content": {}
           },
           "400": {
             "description": "Bad request",
@@ -371,21 +460,29 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       }
     },
     "/api/v1/documents/{id}": {
       "get": {
-        "summary": "Get a document",
         "tags": [
           "document"
         ],
+        "summary": "Get document by id",
+        "description": "Retrieve the document with id = {id}",
+        "operationId": "getSingleDocument",
         "parameters": [
           {
             "name": "id",
@@ -402,24 +499,33 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/document"
+                  "$ref": "#/components/schemas/Document"
                 }
               }
             }
           },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       },
       "delete": {
-        "summary": "Delete a document",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete document",
+        "description": "Delete the document with id = {id}",
+        "operationId": "deleteSingleDocument",
         "parameters": [
           {
             "name": "id",
@@ -432,36 +538,47 @@
         ],
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "content": {}
           },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       }
     },
     "/api/v1/documents/links": {
       "put": {
-        "summary": "Update a link",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Update link",
+        "description": "Update an already existing link. The id of the link is specified in the payload.",
+        "operationId": "updateLink",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/link"
+                "$ref": "#/components/schemas/Link"
               }
             }
           }
         },
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "content": {}
           },
           "400": {
             "description": "Bad request",
@@ -474,11 +591,17 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       }
@@ -495,10 +618,12 @@
         }
       ],
       "get": {
-        "summary": "Get all links of a document",
         "tags": [
           "document"
         ],
+        "summary": "Get links of a document",
+        "description": "Retrieve the list of links of the document with id = {id}",
+        "operationId": "getSingleDocumentLinks",
         "responses": {
           "200": {
             "description": "OK",
@@ -510,7 +635,7 @@
                     "type": "object",
                     "properties": {
                       "documentSnippet": {
-                        "$ref": "#/components/schemas/documentSnippet"
+                        "$ref": "#/components/schemas/DocumentSnippet"
                       },
                       "links": {
                         "type": "array",
@@ -541,31 +666,41 @@
             }
           },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       },
       "post": {
-        "summary": "Create a new link for the {id} document",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Create link",
+        "description": "Create a new link for the document with id = {id}",
+        "operationId": "createLink",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/link"
+                "$ref": "#/components/schemas/Link"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Created"
+            "description": "Created",
+            "content": {}
           },
           "400": {
             "description": "Bad request",
@@ -578,21 +713,34 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
           }
         }
       }
     },
     "/api/v1/documents/{id}/links/{linkId}": {
       "delete": {
-        "summary": "Delete the {linkId} link for a document",
         "tags": [
           "document"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete link",
+        "description": "Deletes the link with id = {linkId}",
+        "operationId": "deleteLink",
         "parameters": [
           {
             "name": "id",
@@ -613,13 +761,192 @@
         ],
         "responses": {
           "204": {
-            "description": "No content"
+            "description": "No content",
+            "content": {}
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
           },
           "404": {
-            "description": "Not found"
+            "description": "Not found",
+            "content": {}
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Get users",
+        "description": "Retrieve the complete list of users (password exluced). Only for testing and admin purposes",
+        "operationId": "getUsers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Users"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Get user",
+        "description": "Retrieve information about a user",
+        "operationId": "getSingleUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "ID of the user to get",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
+          "404": {
+            "description": "Not found",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Log in",
+        "description": "Authenticate a user and return a session",
+        "operationId": "logIn",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/current": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get current user info",
+        "description": "Retrieve the information of the currently authenticated user",
+        "operationId": "getUserInfo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Log out",
+        "description": "Log out the current user",
+        "operationId": "logOut",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {}
           }
         }
       }
