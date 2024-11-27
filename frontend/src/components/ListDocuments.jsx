@@ -8,6 +8,7 @@ import API from "../API";
 import LinkModal from "./LinkModal";
 import { useContext } from "react";
 import FeedbackContext from "../contexts/FeedbackContext";
+import { iconMapping, getIconForDocument, defaultIcon } from "../utils/iconUtils";
 
 export default function ListDocuments({ shouldRefresh }) {
   const [documents, setDocuments] = useState([]);
